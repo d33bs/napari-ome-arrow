@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.13",
     "Topic :: Scientific/Engineering :: Image Processing",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 # napari can be included in dependencies if napari imports are required.
 # However, you should not include napari[all], napari[qt],
 # or any other Qt bindings directly (e.g. PyQt5, PySide2).
@@ -29,6 +29,7 @@ dependencies = [
   "magicgui",
   "qtpy>=2.4",
   "scikit-image",
+  "ome-arrow>=0.0.2",
 ]
 
 [project.optional-dependencies]

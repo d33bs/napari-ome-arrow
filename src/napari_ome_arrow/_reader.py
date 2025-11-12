@@ -1,73 +1,105 @@
 """
-This module is an example of a barebones numpy reader plugin for napari.
-
-It implements the Reader specification, but your plugin may choose to
-implement multiple readers or even other plugin contributions. see:
-https://napari.org/stable/plugins/building_a_plugin/guides.html#readers
+Minimal napari reader for OME-Arrow sources (stack patterns, OME-Zarr, OME-Parquet,
+OME-TIFF) plus a fallback .npy example. Returns Image layers ready for napari.
 """
 
+from __future__ import annotations
+from typing import Any, Dict, List, Sequence, Tuple, Union
+from pathlib import Path
+import warnings
 import numpy as np
 
+# Adjust import if your package layout differs
+from ome_arrow.core import OMEArrow
 
-def napari_get_reader(path):
-    """A basic implementation of a Reader contribution.
-
-    Parameters
-    ----------
-    path : str or list of str
-        Path to file, or list of paths.
-
-    Returns
-    -------
-    function or None
-        If the path is a recognized format, return a function that accepts the
-        same path or list of paths, and returns a list of layer data tuples.
-    """
-    if isinstance(path, list):
-        # reader plugins may be handed single path, or a list of paths.
-        # if it is a list, it is assumed to be an image stack...
-        # so we are only going to look at the first file.
-        path = path[0]
-
-    # if we know we cannot read the file, we immediately return None.
-    if not path.endswith(".npy"):
-        return None
-
-    # otherwise we return the *function* that can read ``path``.
-    return reader_function
+PathLike = Union[str, Path]
+LayerData = Tuple[np.ndarray, Dict[str, Any], str]
 
 
-def reader_function(path):
-    """Take a path or list of paths and return a list of LayerData tuples.
+def napari_get_reader(path: Union[PathLike, Sequence[PathLike]]):
+    """Return a callable if the path looks readable by this plugin."""
+    first = str(path[0] if isinstance(path, (list, tuple)) else path).strip()
+    p = Path(first)
+    s = first.lower()
 
-    Readers are expected to return data as a list of tuples, where each tuple
-    is (data, [add_kwargs, [layer_type]]), "add_kwargs" and "layer_type" are
-    both optional.
+    looks_stack = any(c in first for c in "<>*")
+    looks_zarr = s.endswith(".ome.zarr") or s.endswith(".zarr") or ".zarr/" in s or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
+    looks_parquet = s.endswith((".parquet", ".pq")) or p.suffix.lower() in {".parquet", ".pq"}
+    looks_tiff = s.endswith((".tif", ".tiff")) or p.suffix.lower() in {".tif", ".tiff"}
+    looks_npy = s.endswith(".npy")
 
-    Parameters
-    ----------
-    path : str or list of str
-        Path to file, or list of paths.
+    if looks_stack or looks_zarr or looks_parquet or looks_tiff or looks_npy:
+        return reader_function
+    return None
 
-    Returns
-    -------
-    layer_data : list of tuples
-        A list of LayerData tuples where each tuple in the list contains
-        (data, metadata, layer_type), where data is a numpy array, metadata is
-        a dict of keyword arguments for the corresponding viewer.add_* method
-        in napari, and layer_type is a lower-case string naming the type of
-        layer. Both "meta", and "layer_type" are optional. napari will
-        default to layer_type=="image" if not provided
-    """
-    # handle both a string and a list of strings
-    paths = [path] if isinstance(path, str) else path
-    # load all files into array
-    arrays = [np.load(_path) for _path in paths]
-    # stack arrays into single array
-    data = np.squeeze(np.stack(arrays))
 
-    # optional kwargs for the corresponding viewer.add_* method
-    add_kwargs = {}
+def reader_function(path: Union[Path, Sequence[Path]]) -> List[LayerData]:
+    paths: List[str] = [str(p) for p in (path if isinstance(path, (list, tuple)) else [path])]
+    layers: List[LayerData] = []
 
-    layer_type = "image"  # optional, default is "image"
-    return [(data, add_kwargs, layer_type)]
+    for src in paths:
+        s = src.lower()
+        p = Path(src)
+        looks_stack = any(c in src for c in "<>*")
+        looks_zarr = s.endswith(".ome.zarr") or s.endswith(".zarr") or ".zarr/" in s or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
+        looks_parquet = s.endswith((".ome.parquet", ".parquet", ".pq")) or p.suffix.lower() in {".parquet", ".pq"}
+        looks_tiff = s.endswith((".ome.tif", ".ome.tiff", ".tif", ".tiff")) or p.suffix.lower() in {".tif", ".tiff"}
+        looks_npy = s.endswith(".npy")
+
+        try:
+            add_kwargs: Dict[str, Any] = {"name": p.name}
+
+            if looks_stack or looks_zarr or looks_parquet or looks_tiff:
+                obj = OMEArrow(src)
+                arr = obj.export(how="numpy", dtype=np.uint16)  # expected TCZYX
+                info = obj.info()  # has 'shape': (T, C, Z, Y, X)
+
+                # If something upstream flattened the data to 1D, try to recover YX
+                if getattr(arr, "ndim", 0) == 1:
+                    T, C, Z, Y, X = info.get("shape", (1, 1, 1, 0, 0))
+                    if Y and X and Y * X == arr.size:
+                        arr = arr.reshape((1, 1, 1, Y, X))  # TCZYX minimal
+                    else:
+                        raise ValueError(f"Flat array with unknown shape for {src}: size={arr.size}")
+
+                # Map channel axis if present (TCZYX)
+                if arr.ndim >= 5:
+                    add_kwargs["channel_axis"] = 1  # C
+                elif arr.ndim == 4:
+                    # Often (C, Z, Y, X) — treat first dim as channels
+                    add_kwargs["channel_axis"] = 0
+                elif arr.ndim == 3:
+                    # (Z, Y, X) or (C, Y, X)
+                    if arr.shape[0] <= 6:  # small first dim -> channels
+                        add_kwargs["channel_axis"] = 0
+                elif arr.ndim == 2:
+                    pass  # (Y, X)
+                else:
+                    raise ValueError(f"Unsupported array dimensionality {arr.ndim} for {src}")
+
+                layers.append((arr, add_kwargs, "image"))
+                continue
+
+            if looks_npy:
+                arr = np.load(src)
+                if arr.ndim == 1:
+                    # Heuristic recovery: perfect square -> reshape to YX
+                    n = int(np.sqrt(arr.size))
+                    if n * n == arr.size:
+                        arr = arr.reshape(n, n)
+                    else:
+                        raise ValueError(f".npy is 1D and not a square image: {arr.shape}")
+
+                if arr.ndim == 3 and arr.shape[0] <= 6:
+                    add_kwargs["channel_axis"] = 0
+                layers.append((arr, add_kwargs, "image"))
+                continue
+
+            warnings.warn(f"Skipping unrecognized path: {src}")
+
+        except Exception as e:
+            warnings.warn(f"Failed to read '{src}': {e}")
+
+    if not layers:
+        raise ValueError("No readable inputs found for given path(s).")
+    return layers
