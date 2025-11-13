@@ -24,6 +24,34 @@ PathLike = Union[str, Path]
 LayerData = Tuple[np.ndarray, Dict[str, Any], str]
 
 
+def _maybe_set_viewer_3d(arr: np.ndarray) -> None:
+    """
+    If the array has a Z axis with size > 1, switch the current napari viewer
+    to 3D (ndisplay = 3).
+
+    Assumes OME-Arrow's TCZYX convention or a subset, i.e., Z is always
+    the third-from-last axis. No-op if there's no active viewer.
+    """
+    # Need at least (Z, Y, X)
+    if arr.ndim < 3:
+        return
+
+    z_size = arr.shape[-3]
+    if z_size <= 1:
+        return
+
+    try:
+        import napari
+        viewer = napari.current_viewer()
+    except Exception:
+        # no viewer / not in GUI context → silently skip
+        return
+
+    if viewer is not None:
+        viewer.dims.ndisplay = 3
+
+
+
 # --------------------------------------------------------------------- #
 #  Mode selection (env var + GUI prompt)
 # --------------------------------------------------------------------- #
@@ -213,6 +241,9 @@ def _read_one(src: str, mode: str) -> LayerData:
             add_kwargs.setdefault("opacity", 0.7)
             layer_type = "labels"
 
+        # 🔹 Ask viewer to switch to 3D if there is a real Z-stack
+        _maybe_set_viewer_3d(arr)
+
         return arr, add_kwargs, layer_type
 
     # ---- bare .npy fallback -----------------------------------------
@@ -236,6 +267,9 @@ def _read_one(src: str, mode: str) -> LayerData:
             arr = _as_labels(arr)
             add_kwargs.setdefault("opacity", 0.7)
             layer_type = "labels"
+
+        # 🔹 Same 3D toggle for npy-based data
+        _maybe_set_viewer_3d(arr)
 
         return arr, add_kwargs, layer_type
 
