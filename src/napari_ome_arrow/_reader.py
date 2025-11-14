@@ -15,13 +15,13 @@ import os
 import warnings
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 import numpy as np
 from ome_arrow.core import OMEArrow
 
 PathLike = Union[str, Path]
-LayerData = Tuple[np.ndarray, Dict[str, Any], str]
+LayerData = tuple[np.ndarray, dict[str, Any], str]
 
 
 def _maybe_set_viewer_3d(arr: np.ndarray) -> None:
@@ -82,7 +82,8 @@ def _get_layer_mode(sample_path: str) -> str:
         # no Qt, probably headless: default to image
         warnings.warn(
             "NAPARI_OME_ARROW_LAYER_TYPE not set and Qt not available; "
-            "defaulting to 'image'."
+            "defaulting to 'image'.",
+            stacklevel=2,
         )
         return "image"
 
@@ -91,7 +92,8 @@ def _get_layer_mode(sample_path: str) -> str:
         # Again, likely headless or non-Qt usage
         warnings.warn(
             "NAPARI_OME_ARROW_LAYER_TYPE not set and no QApplication instance; "
-            "defaulting to 'image'."
+            "defaulting to 'image'.",
+            stacklevel=2,
         )
         return "image"
 
@@ -144,10 +146,11 @@ def _looks_like_ome_source(path_str: str) -> bool:
 
     looks_stack = any(c in path_str for c in "<>*")
     looks_zarr = (
-        s.endswith(".ome.zarr")
-        or s.endswith(".zarr")
+        s.endswith((".ome.zarr", ".zarr"))
         or ".zarr/" in s
-        or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
+        or p.exists()
+        and p.is_dir()
+        and p.suffix.lower() == ".zarr"
     )
     looks_parquet = s.endswith(
         (".ome.parquet", ".parquet", ".pq")
@@ -201,10 +204,11 @@ def _read_one(src: str, mode: str) -> LayerData:
 
     looks_stack = any(c in src for c in "<>*")
     looks_zarr = (
-        s.endswith(".ome.zarr")
-        or s.endswith(".zarr")
+        s.endswith((".ome.zarr", ".zarr"))
         or ".zarr/" in s
-        or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
+        or p.exists()
+        and p.is_dir()
+        and p.suffix.lower() == ".zarr"
     )
     looks_parquet = s.endswith(
         (".ome.parquet", ".parquet", ".pq")
@@ -220,7 +224,7 @@ def _read_one(src: str, mode: str) -> LayerData:
     }
     looks_npy = s.endswith(".npy")
 
-    add_kwargs: Dict[str, Any] = {"name": p.name}
+    add_kwargs: dict[str, Any] = {"name": p.name}
 
     # ---- OME-Arrow-backed sources -----------------------------------
     if looks_stack or looks_zarr or looks_parquet or looks_tiff:
@@ -294,17 +298,17 @@ def _read_one(src: str, mode: str) -> LayerData:
 
 def reader_function(
     path: Union[PathLike, Sequence[PathLike]],
-) -> List[LayerData]:
+) -> list[LayerData]:
     """
     The actual reader callable napari will use.
 
     It reads one or more paths, prompting the user (or using the env var)
     to decide 'image' vs 'labels', and returns a list of LayerData tuples.
     """
-    paths: List[str] = [
+    paths: list[str] = [
         str(p) for p in (path if isinstance(path, (list, tuple)) else [path])
     ]
-    layers: List[LayerData] = []
+    layers: list[LayerData] = []
 
     # Use the first path as context for the dialog label
     try:
@@ -317,7 +321,10 @@ def reader_function(
         try:
             layers.append(_read_one(src, mode=mode))
         except Exception as e:
-            warnings.warn(f"Failed to read '{src}' with napari-ome-arrow: {e}")
+            warnings.warn(
+                f"Failed to read '{src}' with napari-ome-arrow: {e}",
+                stacklevel=2,
+            )
 
     if not layers:
         raise ValueError("No readable inputs found for given path(s).")

@@ -112,9 +112,10 @@ lint.select = [
   "W",   #flake8
 ]
 lint.ignore = [
-  "E501",  # line too long. let black handle this
+  "BLE001",
+  "E501",
   "UP006",
-  "UP007", # type annotation. As using magicgui require runtime type annotation then we disable this.
+  "UP007",
 ]
 
 [tool.pytest.ini_options]
@@ -123,3 +124,7 @@ addopts = [ "-ra", "--showlocals", "--strict-markers", "--strict-config" ]
 xfail_strict = true
 log_cli_level = "INFO"
 testpaths = [ "tests" ]
+
+[tool.vulture]
+min_confidence = 90
+paths = [ "src/napari_ome_arrow", "tests" ]
