@@ -11,14 +11,14 @@ Behavior:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, List, Sequence, Tuple, Union
 import os
 import warnings
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-
-from ome_arrow.core import OMEArrow  # adjust if your import path differs
+from ome_arrow.core import OMEArrow
 
 PathLike = Union[str, Path]
 LayerData = Tuple[np.ndarray, Dict[str, Any], str]
@@ -42,6 +42,7 @@ def _maybe_set_viewer_3d(arr: np.ndarray) -> None:
 
     try:
         import napari
+
         viewer = napari.current_viewer()
     except Exception:
         # no viewer / not in GUI context → silently skip
@@ -51,10 +52,10 @@ def _maybe_set_viewer_3d(arr: np.ndarray) -> None:
         viewer.dims.ndisplay = 3
 
 
-
 # --------------------------------------------------------------------- #
 #  Mode selection (env var + GUI prompt)
 # --------------------------------------------------------------------- #
+
 
 def _get_layer_mode(sample_path: str) -> str:
     """
@@ -125,6 +126,7 @@ def _get_layer_mode(sample_path: str) -> str:
 #  Helper utilities
 # --------------------------------------------------------------------- #
 
+
 def _as_labels(arr: np.ndarray) -> np.ndarray:
     """Convert any array into an integer label array."""
     if arr.dtype.kind == "f":
@@ -147,21 +149,28 @@ def _looks_like_ome_source(path_str: str) -> bool:
         or ".zarr/" in s
         or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
     )
-    looks_parquet = s.endswith((".ome.parquet", ".parquet", ".pq")) or p.suffix.lower() in {
+    looks_parquet = s.endswith(
+        (".ome.parquet", ".parquet", ".pq")
+    ) or p.suffix.lower() in {
         ".parquet",
         ".pq",
     }
-    looks_tiff = s.endswith((".ome.tif", ".ome.tiff", ".tif", ".tiff")) or p.suffix.lower() in {
+    looks_tiff = s.endswith(
+        (".ome.tif", ".ome.tiff", ".tif", ".tiff")
+    ) or p.suffix.lower() in {
         ".tif",
         ".tiff",
     }
     looks_npy = s.endswith(".npy")
-    return looks_stack or looks_zarr or looks_parquet or looks_tiff or looks_npy
+    return (
+        looks_stack or looks_zarr or looks_parquet or looks_tiff or looks_npy
+    )
 
 
 # --------------------------------------------------------------------- #
 #  napari entry point: napari_get_reader
 # --------------------------------------------------------------------- #
+
 
 def napari_get_reader(path: Union[PathLike, Sequence[PathLike]]):
     """
@@ -181,6 +190,7 @@ def napari_get_reader(path: Union[PathLike, Sequence[PathLike]]):
 #  Reader implementation: reader_function
 # --------------------------------------------------------------------- #
 
+
 def _read_one(src: str, mode: str) -> LayerData:
     """
     Read a single source into (data, add_kwargs, layer_type),
@@ -196,11 +206,15 @@ def _read_one(src: str, mode: str) -> LayerData:
         or ".zarr/" in s
         or (p.exists() and p.is_dir() and p.suffix.lower() == ".zarr")
     )
-    looks_parquet = s.endswith((".ome.parquet", ".parquet", ".pq")) or p.suffix.lower() in {
+    looks_parquet = s.endswith(
+        (".ome.parquet", ".parquet", ".pq")
+    ) or p.suffix.lower() in {
         ".parquet",
         ".pq",
     }
-    looks_tiff = s.endswith((".ome.tif", ".ome.tiff", ".tif", ".tiff")) or p.suffix.lower() in {
+    looks_tiff = s.endswith(
+        (".ome.tif", ".ome.tiff", ".tif", ".tiff")
+    ) or p.suffix.lower() in {
         ".tif",
         ".tiff",
     }
@@ -217,7 +231,7 @@ def _read_one(src: str, mode: str) -> LayerData:
         # Recover from accidental 1D flatten
         if getattr(arr, "ndim", 0) == 1:
             T, C, Z, Y, X = info.get("shape", (1, 1, 1, 0, 0))
-            if Y and X and Y * X == arr.size:
+            if Y and X and arr.size == Y * X:
                 arr = arr.reshape((1, 1, 1, Y, X))
             else:
                 raise ValueError(
@@ -233,9 +247,9 @@ def _read_one(src: str, mode: str) -> LayerData:
             layer_type = "image"
         else:
             # Labels: squash channels, ensure integer dtype
-            if arr.ndim == 5:   # (T, C, Z, Y, X)
+            if arr.ndim == 5:  # (T, C, Z, Y, X)
                 arr = arr[:, 0, ...]
-            elif arr.ndim == 4: # (C, Z, Y, X)
+            elif arr.ndim == 4:  # (C, Z, Y, X)
                 arr = arr[0, ...]
             arr = _as_labels(arr)
             add_kwargs.setdefault("opacity", 0.7)
@@ -254,7 +268,9 @@ def _read_one(src: str, mode: str) -> LayerData:
             if n * n == arr.size:
                 arr = arr.reshape(n, n)
             else:
-                raise ValueError(f".npy is 1D and not a square image: {arr.shape}")
+                raise ValueError(
+                    f".npy is 1D and not a square image: {arr.shape}"
+                )
 
         if mode == "image":
             if arr.ndim == 3 and arr.shape[0] <= 6:
@@ -276,7 +292,9 @@ def _read_one(src: str, mode: str) -> LayerData:
     raise ValueError(f"Unrecognized path for napari-ome-arrow reader: {src}")
 
 
-def reader_function(path: Union[PathLike, Sequence[PathLike]]) -> List[LayerData]:
+def reader_function(
+    path: Union[PathLike, Sequence[PathLike]],
+) -> List[LayerData]:
     """
     The actual reader callable napari will use.
 
