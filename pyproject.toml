@@ -60,6 +60,7 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = [ "src" ]
+exclude = [ "*.tests", "*.tests.*", "tests*" ]
 
 [tool.setuptools.package-data]
 "*" = [ "*.yaml" ]

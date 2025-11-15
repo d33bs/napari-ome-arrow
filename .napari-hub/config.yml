@@ -1,9 +1,41 @@
-# You may use this file to customize how your plugin page appears
-# on the napari hub: https://www.napari-hub.org/
-# See their wiki for details https://github.com/chanzuckerberg/napari-hub/wiki
+# .napari-hub/config.yml
 
-# Please note that this file should only be used IN ADDITION to entering
-# metadata fields (such as summary, description, authors, and various URLS)
-# in your standard python package metadata (e.g. setup.cfg, setup.py, or
-# pyproject.toml), when you would like those fields to be displayed
-# differently on the hub than in the napari application.
+# How this plugin appears on napari hub
+display_name: napari-ome-arrow
+name: napari-ome-arrow
+
+# Use DESCRIPTION.md (plugin-focused) instead of README.md for the hub page
+readme: README.md
+
+# Short one-line summary shown in lists/search results
+summary: >
+  Reader for OME-Arrow-backed OME-TIFF, OME-Zarr,
+  OME-Parquet, and stack patterns, with explicit
+  image/labels selection and automatic 3D for z-stacks.
+
+# Optional: keywords to help people find it
+labels:
+  - reader
+  - ome-tiff
+  - ome-zarr
+  - ome-parquet
+  - bioimaging
+  - microscopy
+  - z-stack
+  - segmentation
+  - labels
+
+# Optional tags (similar to labels; hub treats them slightly differently)
+tags:
+  - data-io
+  - bioimage-analysis
+  - visualization
+
+# License identifier (adjust to match pyproject.toml)
+license: BSD-3-Clause
+
+# Links (replace with your actual URLs)
+code_repository: https://github.com/wayscience/napari-ome-arrow
+documentation: https://github.com/wayscience/napari-ome-arrow#readme
+support:
+  issues: https://github.com/wayscience/napari-ome-arrow/issues
