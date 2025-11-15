@@ -3,8 +3,6 @@
 [![License BSD-3](https://img.shields.io/pypi/l/napari-ome-arrow.svg?color=green)](https://github.com/wayscience/napari-ome-arrow/raw/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/napari-ome-arrow.svg?color=green)](https://pypi.org/project/napari-ome-arrow)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-ome-arrow.svg?color=green)](https://python.org)
-[![tests](https://github.com/wayscience/napari-ome-arrow/workflows/tests/badge.svg)](https://github.com/wayscience/napari-ome-arrow/actions)
-[![codecov](https://codecov.io/gh/wayscience/napari-ome-arrow/branch/main/graph/badge.svg)](https://codecov.io/gh/wayscience/napari-ome-arrow)
 [![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-ome-arrow)](https://napari-hub.org/plugins/napari-ome-arrow)
 [![npe2](https://img.shields.io/badge/plugin-npe2-blue?link=https://napari.org/stable/plugins/index.html)](https://napari.org/stable/plugins/index.html)
 
