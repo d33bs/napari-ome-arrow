@@ -1,0 +1,131 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [ "setuptools>=42", "setuptools-scm" ]
+
+[project]
+name = "napari-ome-arrow"
+description = "A Napari plugin for OME-Arrow and OME-Parquet bioimage data"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+classifiers = [
+  "Framework :: napari",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: BSD License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Scientific/Engineering :: Image Processing",
+]
+dynamic = [ "version" ]
+# napari can be included in dependencies if napari imports are required.
+# However, you should not include napari[all], napari[qt],
+# or any other Qt bindings directly (e.g. PyQt5, PySide2).
+# See best practices: https://napari.org/stable/plugins/building_a_plugin/best_practices.html
+dependencies = [
+  "magicgui",
+  "numpy",
+  "ome-arrow>=0.0.2",
+  "qtpy>=2.4",
+  "scikit-image",
+]
+
+# If you want a convenience "everything" extra, keep it backend-agnostic:
+optional-dependencies.all = [ "napari", "qtpy>=2.4" ]
+optional-dependencies.pyqt6 = [ "napari[pyqt6]", "pyqt6>=6.6", "qtpy>=2.4" ]
+# Let users choose their Qt backend explicitly:
+optional-dependencies.pyside6 = [ "napari[pyside6]", "pyside6>=6.6", "qtpy>=2.4" ]
+urls."Bug Tracker" = "https://github.com/wayscience/napari-ome-arrow/issues"
+urls."Documentation" = "https://github.com/wayscience/napari-ome-arrow#README.md"
+urls."Source Code" = "https://github.com/wayscience/napari-ome-arrow"
+urls."User Support" = "https://github.com/wayscience/napari-ome-arrow/issues"
+entry-points."napari.manifest".napari-ome-arrow = "napari_ome_arrow:napari.yaml"
+
+[dependency-groups]
+# Use PySide6 universally for development/tests (works on mac/win/linux)
+dev = [
+  "napari[pyside6]",
+  "pyside6>=6.6",
+  "pytest",
+  "pytest-qt>=4.4",
+  "qtpy>=2.4",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = [ "src" ]
+exclude = [ "*.tests", "*.tests.*", "tests*" ]
+
+[tool.setuptools.package-data]
+"*" = [ "*.yaml" ]
+
+[tool.setuptools_scm]
+write_to = "src/napari_ome_arrow/_version.py"
+fallback_version = "0.0.1+nogit"
+
+[tool.black]
+line-length = 79
+target-version = [ 'py310', 'py311', 'py312', 'py313' ]
+
+[tool.ruff]
+line-length = 79
+exclude = [
+  "*_vendor*",
+  "*vendored*",
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".mypy_cache",
+  ".pants.d",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "venv",
+]
+fix = true
+lint.select = [
+  "A",   # flake8-builtins
+  "B",   # flake8-bugbear
+  "BLE", # flake8-blind-exception
+  "C4",  # flake8-comprehensions
+  "E",
+  "F",
+  "G",   # flake8-logging-format
+  "I",   # isort
+  "ISC", # flake8-implicit-str-concat
+  "PIE", # flake8-pie
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade
+  "W",   #flake8
+]
+lint.ignore = [
+  "BLE001",
+  "E501",
+  "UP006",
+  "UP007",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [ "-ra", "--showlocals", "--strict-markers", "--strict-config" ]
+xfail_strict = true
+log_cli_level = "INFO"
+testpaths = [ "tests" ]
+
+[tool.vulture]
+min_confidence = 90
+paths = [ "src/napari_ome_arrow", "tests" ]

@@ -1,0 +1,23 @@
+name: napari-ome-arrow
+display_name: OME-Arrow
+contributions:
+  commands:
+    - id: napari-ome-arrow.get_reader
+      python_name: napari_ome_arrow._reader:napari_get_reader
+      title: Open OME-Arrow data
+  readers:
+    - command: napari-ome-arrow.get_reader
+      filename_patterns:
+        # OME-Parquet
+        - "*.ome.parquet"
+        - "*.parquet"
+        - "*.pq"
+        # OME-TIFF
+        - "*.ome.tif"
+        - "*.ome.tiff"
+        - "*.tif"
+        - "*.tiff"
+        # OME-Zarr
+        - "*.ome.zarr"
+        - "*.zarr"
+      accepts_directories: true
