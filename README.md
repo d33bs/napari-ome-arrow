@@ -112,19 +112,17 @@ NAPARI_OME_ARROW_LAYER_TYPE=labels napari my_labels.ome.parquet
 
 ## Contributing
 
-Contributions are very welcome. Tests can be run with `pytest`, please ensure
-the coverage at least stays the same before you submit a pull request.
+Contributions are very welcome.
+Please reference our [CONTRIBUTING.md](CONTRIBUTING.md) guide.
 
 ## License
 
-Distributed under the terms of the [BSD-3] license,
-"napari-ome-arrow" is free and open source software
+Please see the [LICENSE](LICENSE) file for more information.
 
 ## Issues
 
 If you encounter any problems, please [file an issue] along with a detailed description.
 
-[bsd-3]: http://opensource.org/licenses/BSD-3-Clause
 [copier]: https://copier.readthedocs.io/en/stable/
 [file an issue]: https://github.com/wayscience/napari-ome-arrow/issues
 [napari]: https://github.com/napari/napari
